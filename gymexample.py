@@ -68,8 +68,8 @@ class Agent:
                 obs = next_obs
                 total += reward
             best_reward = max(best_reward, total)
-            print('Episode: {}, Reward: {}, Best_reward: {}'.format(ep, total, best_reward))
-        return np.argmax(self.agent.action_state_values, axis=2)
+            #print('Episode: {}, Reward: {}, Best_reward: {}'.format(ep, total, best_reward))
+        return np.argmax(self.agent.action_state_vals, axis=2)
 
     def test(self, policy):
         finished = False
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     #env = gym.make('MountainCarMyEasyVersion-v0')
 
 
-    max_episodes = np.arange(10000, 100000, 10000, dtype=np.int32)
+    max_episodes = np.arange(50000, 100000, 10000, dtype=np.int32)
     bins = np.arange(10, 100, 5, dtype=np.int32)
 
 
@@ -99,8 +99,8 @@ if __name__ == "__main__":
     handler = Agent(env, agent)
     policy = handler.train()
 
-    output_dir = './q_output'
-    env = gym.wrappers.Monitor(env, output_dir, force=True)
+    #output_dir = './q_output'
+    #env = gym.wrappers.Monitor(env, output_dir, force=True)
     for _ in range(1000):
         handler.test(policy)
 
