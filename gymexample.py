@@ -4,6 +4,37 @@ import random
 import time
 import matplotlib.pyplot as plt
 
+alpha = 0.05
+gamma = 0.9
+epsilon = 1.0
+epsilon_min = 0.005
+decay_factor = 500
+max_episode_steps = 200
+
+class QLearning:
+    def __init__(self, env, bins, max_episodes):
+        global alpha, gamma, epsilon, epsilon_min
+        self.env = env
+        self.decay = decay_factor * epsilon_min / (max_episodes * max_episode_steps)
+
+
+        self.pos = np.linspace(env.observation_space.low[0], env.observation_space.high[0], num=bins, endpoint=True)
+        self.vel = np.linspace(env.observation_space.low[1], env.observation_space.high[1], num=bins, endpoint=True)
+        self.action_state_vals = np.zeros((bins+1, bins+1, env.action_space.n))
+
+    def discretize(self, observation):
+        return np.digitize(observation[0], self.pos), np.digitize(observation[1], self.vel)
+
+    def select(self, observation):
+        discretized_obs = self.digitize(observation)
+
+
+
+class SARSA:
+    def __init__(self, env, bins, max_episodes):
+        self.env = env
+
+
 
 if __name__ == "__main__":
     slow = True
