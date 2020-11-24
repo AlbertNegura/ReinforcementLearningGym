@@ -61,21 +61,24 @@ class SARSA:
         self.pos = linearize(env, 0, bins) # from -1.2 to 0.6 for bins
         self.vel = linearize(env, 1, bins) # from -0.07 to 0.07 for bins
         self.action_state_vals = np.zeros((bins+1, bins+1, env.action_space.n))
+        self.policy = np.random.randint(0, env.action_space.n, size=(bins+1, bins+1))
 
     def select(self, observation):
         discretized_obs = discretize(observation, self.pos, self.vel)
         if self.epsilon > epsilon_min:
             self.epsilon -= self.decay
         if np.random.random() > self.epsilon:
-            return np.argmax(self.action_state_vals[discretized_obs])
+            return np.policy[discretized_obs]
         else:
             return np.random.choice(env.action_space.n)
 
     def learn(self, obs, action, reward, next_obs):
         discretized_obs = discretize(obs, self.pos, self.vel)
         discretized_next_obs = discretize(next_obs, self.pos, self.vel)
+        next_action = self.policy[discretized_next_obs]
         action_values = reward + gamma * np.max(self.action_state_vals[discretized_next_obs]) - self.action_state_vals[discretized_obs][action]
         self.action_state_vals[discretized_obs][action] += alpha * action_values
+        self.policy[discretized_obs] = np.argmax(self.action_state_vals[discretized_obs])
 
 
 class Agent:
