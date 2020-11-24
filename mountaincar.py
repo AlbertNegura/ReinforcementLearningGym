@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse as ap
 
-alpha = 0.1
+alpha = 0.9
 gamma = 0.9
 epsilon = 1.0
 epsilon_min = 0.005
@@ -129,34 +129,53 @@ class Agent:
                     self.env.render()
             best_reward = max(best_reward, total)
             rewards.append(total)
-            if ep % 100 == 0:
+            if ep in [100, 300, 500, 700, 1000, 2000, 2500, 5000, 10000]:
                 heatmap(self.agent, ep, self.agent.bins, best_reward)
             print('Episode: {}, Reward: {}, Best_reward: {}'.format(ep, total, best_reward))
         reward_plot()
         return np.argmax(self.agent.action_state_vals, axis=2)
 
 if __name__ == "__main__":
-    parser = ap.ArgumentParser(fromfile_prefix_chars='@')
+    parser = ap.ArgumentParser()
 
     parser.add_argument('-a',
                         type=float,
+                        default=0.5,
                         help='Alpha Value (default = 0.1)')
 
     parser.add_argument('-g',
                         type=float,
+                        default=0.9,
                         help='Gamma value (default = 0.9)')
 
     parser.add_argument('-e', '--episodes',
                         type=int,
+                        default=10000,
                         help='Maximum number of episodes (default = 50000)')
 
     parser.add_argument('-r', '--render',
                         type=bool,
+                        default=False,
                         help='Whether to render the mountain car using the OpenAI Gym environment (default = False)')
 
+    parser.add_argument('-b', '--bins',
+                        type=int,
+                        default=50,
+                        help='Number of bins used for discretization.')
 
+    parser.add_argument('-s', '--steps',
+                        type=int,
+                        default=2000,
+                        help='Number of time steps each episode.')
     # Execute parse_args()
     args = parser.parse_args()
+
+    alpha = args.a
+    gamma = args.g
+    render = args.r
+    max_episodes = [args.e]
+    bins = [args.b]
+    max_episode_steps = args.s
 
 
     # env = gym.make("MountainCar-v0")
@@ -167,9 +186,8 @@ if __name__ == "__main__":
 
     #max_episodes = np.arange(50000, 100000, 10000, dtype=np.int32)
     #bins = np.arange(50, 1000, 50, dtype=np.int32)
-    max_episodes = [10000]
-    bins = [50]
-
+    #max_episodes = [10000]
+    #bins = [50]
     agent = []
 
     agent.append(QLearning(env, bins[0], max_episodes[0], epsilon))
