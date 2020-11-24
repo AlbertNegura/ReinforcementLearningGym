@@ -20,7 +20,7 @@ def discretize(observation, pos, vel):
     return np.digitize(observation[0], pos), np.digitize(observation[1], vel)
 
 
-def heatmap(agent, episode, n_bins):
+def heatmap(agent, episode, n_bins, reward):
     q_vals = agent.action_state_vals
     values = np.zeros((n_bins, n_bins))
     for i in range(n_bins):
@@ -30,7 +30,7 @@ def heatmap(agent, episode, n_bins):
     plt.ylabel('Velocity') # clamped between -1.2 and 0.6 by environment
     plt.xlabel('Position') # clamped between -0.7 and 0.7 by environment
     plt.colorbar()
-    plt.title('Heatmap after {} episodes'.format(episode))
+    plt.title('Heatmap after {} episodes; best reward: {}'.format(episode, reward))
     plt.show()
 
 
@@ -118,7 +118,7 @@ class Agent:
                     self.env.render()
             best_reward = max(best_reward, total)
             if ep % 50 == 0:
-                heatmap(self.agent, ep, self.agent.bins)
+                heatmap(self.agent, ep, self.agent.bins, best_reward)
             print('Episode: {}, Reward: {}, Best_reward: {}'.format(ep, total, best_reward))
         return np.argmax(self.agent.action_state_vals, axis=2)
 
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     #max_episodes = np.arange(50000, 100000, 10000, dtype=np.int32)
     #bins = np.arange(50, 1000, 50, dtype=np.int32)
-    max_episodes = [5000]
+    max_episodes = [10000]
     bins = [50]
 
     agent = []
