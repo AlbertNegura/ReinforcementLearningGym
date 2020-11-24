@@ -262,6 +262,9 @@ if __name__ == "__main__":
                         type=bool,
                         default=True,
                         help='The Testing mode variable (True/False)')
+    parser.add_argument('--agent',
+                        default="QLearning",
+                        help='Which agent to train (options: QLearning, SARSA, Both) - note that "Both" train the Q learning agent first.')
     # Execute parse_args()
     args = parser.parse_args()
 
@@ -273,6 +276,7 @@ if __name__ == "__main__":
     max_episode_steps = args.steps
     DEBUG = args.debug
     CONSTANT = args.constant
+    ag = args.agent
 
 
     # env = gym.make("MountainCar-v0")
@@ -286,9 +290,14 @@ if __name__ == "__main__":
     #max_episodes = [10000]
     #bins = [50]
     agent = []
+    if ag == "QLearning":
+        agent.append(QLearning(env, bins[0], max_episodes[0], epsilon))
+    elif ag == "SARSA":
+        agent.append(SARSA(env, bins[0], max_episodes[0], epsilon))
+    elif ag == "Both":
+        agent.append(QLearning(env, bins[0], max_episodes[0], epsilon))
+        agent.append(SARSA(env, bins[0], max_episodes[0], epsilon))
 
-    agent.append(QLearning(env, bins[0], max_episodes[0], epsilon))
-    agent.append(SARSA(env, bins[0], max_episodes[0], epsilon))
 
     handler = [Agent(env, agent[i]) for i in range(len(agent))]
     policy = [handler[i].train() for i in range(len(handler))]
