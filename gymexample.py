@@ -8,9 +8,9 @@ gamma = 0.9
 epsilon = 1.0
 epsilon_min = 0.005
 decay_factor = 500
-max_episode_steps = 10000
+max_episode_steps = 2000
 RENDER = False
-
+rewards = []
 
 def linearize(env, i, n_bins):
     return np.linspace(env.observation_space.low[i], env.observation_space.high[i], num=n_bins, endpoint=True)
@@ -31,6 +31,15 @@ def heatmap(agent, episode, n_bins, reward):
     plt.xlabel('Position') # clamped between -0.7 and 0.7 by environment
     plt.colorbar()
     plt.title('Heatmap after {} episodes; best reward: {}'.format(episode, reward))
+    plt.show()
+
+
+def reward_plot():
+    episodes = [i+1 for i in range(max_episodes[0])]
+    plt.plot(episodes, rewards)
+    plt.ylabel('Reward') # clamped between -1.2 and 0.6 by environment
+    plt.xlabel('Episode') # clamped between -0.7 and 0.7 by environment
+    plt.title('Reward over episodes')
     plt.show()
 
 
@@ -103,7 +112,9 @@ class Agent:
         self.env = env
 
     def train(self):
+        global rewards
         best_reward = -1000000000
+        rewards = []
         for ep in range(1, self.agent.max_eps + 1):
             finished = False
             total = 0.0
@@ -117,9 +128,11 @@ class Agent:
                 if reward > best_reward and RENDER:
                     self.env.render()
             best_reward = max(best_reward, total)
-            if ep % 50 == 0:
+            rewards.append(total)
+            if ep % 100 == 0:
                 heatmap(self.agent, ep, self.agent.bins, best_reward)
             print('Episode: {}, Reward: {}, Best_reward: {}'.format(ep, total, best_reward))
+        reward_plot()
         return np.argmax(self.agent.action_state_vals, axis=2)
 
 if __name__ == "__main__":
