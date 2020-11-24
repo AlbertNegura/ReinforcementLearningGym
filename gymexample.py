@@ -1,8 +1,6 @@
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
-import random
-import time
 import argparse as ap
 
 alpha = 0.1
@@ -24,13 +22,13 @@ def discretize(observation, pos, vel):
 
 def heatmap(agent, episode, n_bins):
     q_vals = agent.action_state_vals
-    values = np.zeros((n_bins+1, n_bins+1))
-    for i in range(n_bins+1):
-        for j in range(n_bins+1):
-            values[i][j] = np.argmax(q_vals[i, j, :])
-    plt.imshow(values, cmap='viridis', aspect='auto', extent=[-0.07, 0.07, -1.2, 0.6])
-    plt.ylabel('Position') # clamped between -1.2 and 0.6 by environment
-    plt.xlabel('Velocity') # clamped between -0.7 and 0.7 by environment
+    values = np.zeros((n_bins, n_bins))
+    for i in range(n_bins):
+        for j in range(n_bins):
+            values[i][j] = np.max(q_vals[i, j, :])
+    plt.imshow(values, cmap='viridis', aspect='auto', extent=[-1.2, 0.6,-0.07, 0.07])
+    plt.ylabel('Velocity') # clamped between -1.2 and 0.6 by environment
+    plt.xlabel('Position') # clamped between -0.7 and 0.7 by environment
     plt.colorbar()
     plt.title('Heatmap after {} episodes'.format(episode))
     plt.show()
@@ -85,7 +83,7 @@ class SARSA:
         if self.epsilon > epsilon_min:
             self.epsilon -= self.decay
         if np.random.random() > self.epsilon:
-            return np.policy[discretized_obs]
+            return self.policy[discretized_obs]
         else:
             return np.random.choice(env.action_space.n)
 
@@ -124,20 +122,29 @@ class Agent:
             print('Episode: {}, Reward: {}, Best_reward: {}'.format(ep, total, best_reward))
         return np.argmax(self.agent.action_state_vals, axis=2)
 
-    def test(self, policy):
-        finished = False
-        total = 0.0
-        obs = self.env.reset()
-        while not finished:
-            action = policy[discretize(obs, self.agent.pos, self.agent.vel)]
-            next_obs, reward, done, info = self.env.step(action)
-            obs = next_obs
-            total += reward
-        return total
-
-
 if __name__ == "__main__":
-    slow = True
+    parser = ap.ArgumentParser(fromfile_prefix_chars='@')
+
+    parser.add_argument('-a',
+                        type=float,
+                        help='Alpha Value (default = 0.1)')
+
+    parser.add_argument('-g',
+                        type=float,
+                        help='Gamma value (default = 0.9)')
+
+    parser.add_argument('-e', '--episodes',
+                        type=int,
+                        help='Maximum number of episodes (default = 50000)')
+
+    parser.add_argument('-r', '--render',
+                        type=bool,
+                        help='Whether to render the mountain car using the OpenAI Gym environment (default = False)')
+
+
+    # Execute parse_args()
+    args = parser.parse_args()
+
 
     # env = gym.make("MountainCar-v0")
 
@@ -147,7 +154,7 @@ if __name__ == "__main__":
 
     #max_episodes = np.arange(50000, 100000, 10000, dtype=np.int32)
     #bins = np.arange(50, 1000, 50, dtype=np.int32)
-    max_episodes = [50000]
+    max_episodes = [5000]
     bins = [50]
 
     agent = []
@@ -158,37 +165,4 @@ if __name__ == "__main__":
     handler = [Agent(env, agent[i]) for i in range(len(agent))]
     policy = [handler[i].train() for i in range(len(handler))]
 
-    # output_dir = './q_output'
-    # env = gym.wrappers.Monitor(env, output_dir, force=True)
-    for i in range(len(handler)):
-        for _ in range(1000):
-            env.render()
-            [handler[i].test(policy)]
-
     env.close()
-
-"""
-    action_sapce = env.action_space
-    epsilon = 1
-    learning_rate = 0.001
-    discount_rate = 0.999
-
-    Q_values = np.zeros((20, 20, action_sapce.n))
-    max_episode_steps = 10000
-    env._max_episode_steps = max_episode_steps
-
-
-    for _ in range(10):
-        observation = env.reset()
-        done = False
-        timesteps = 0
-        while not done:
-            if slow: env.render()
-            action = env.action_space.sample()
-            observation, reward, done, info = env.step(action)
-            timesteps += 1
-            if slow: print(observation)
-            if slow: print(reward)
-            if slow: print(done)
-        print(f"Episode finished after {timesteps} timesteps.")
-"""
