@@ -11,6 +11,8 @@ decay_factor = 500
 max_episode_steps = 2000
 RENDER = False
 rewards = []
+DEBUG = True
+CONSTANT = True
 
 def linearize(env, i, n_bins):
     return np.linspace(env.observation_space.low[i], env.observation_space.high[i], num=n_bins, endpoint=True)
@@ -129,7 +131,10 @@ class Agent:
                     self.env.render()
             best_reward = max(best_reward, total)
             rewards.append(total)
-            if ep in [100, 300, 500, 700, 1000, 2000, 2500, 5000, 10000]:
+            if DEBUG:
+                if ep in [100, 300, 500, 700, 1000, 2000, 2500, 5000, 10000]:
+                    heatmap(self.agent, ep, self.agent.bins, best_reward)
+            if RENDER or CONSTANT:
                 heatmap(self.agent, ep, self.agent.bins, best_reward)
             print('Episode: {}, Reward: {}, Best_reward: {}'.format(ep, total, best_reward))
         reward_plot()
@@ -140,7 +145,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-a',
                         type=float,
-                        default=0.5,
+                        default=0.1,
                         help='Alpha Value (default = 0.1)')
 
     parser.add_argument('-g',
@@ -160,22 +165,32 @@ if __name__ == "__main__":
 
     parser.add_argument('-b', '--bins',
                         type=int,
-                        default=50,
+                        default=70,
                         help='Number of bins used for discretization.')
 
     parser.add_argument('-s', '--steps',
                         type=int,
                         default=2000,
                         help='Number of time steps each episode.')
+    parser.add_argument('--constant',
+                        type=bool,
+                        default=True,
+                        help='The constant printing variable (True/False)')
+    parser.add_argument('--debug',
+                        type=bool,
+                        default=False,
+                        help='The Testing mode variable (True/False)')
     # Execute parse_args()
     args = parser.parse_args()
 
     alpha = args.a
     gamma = args.g
-    render = args.r
-    max_episodes = [args.e]
-    bins = [args.b]
-    max_episode_steps = args.s
+    RENDER = args.render
+    max_episodes = [args.episodes]
+    bins = [args.bins]
+    max_episode_steps = args.steps
+    DEBUG = args.debug
+    CONSTANT = args.constant
 
 
     # env = gym.make("MountainCar-v0")
