@@ -1,9 +1,9 @@
 import gym
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 import time
 import argparse as ap
-import matplotlib.pyplot as plt
 
 alpha = 0.05
 gamma = 0.9
@@ -11,6 +11,13 @@ epsilon = 1.0
 epsilon_min = 0.005
 decay_factor = 500
 max_episode_steps = 200
+
+
+def linearize(env, i, bins):
+    return np.linspace(env.observation_space.low[i], env.observation_space.high[i], num=bins, endpoint=True)
+
+def discretize(observation, pos, vel):
+    return np.digitize(observation[0], pos), np.digitize(observation[1], vel)
 
 class QLearning:
     def __init__(self, env, bins, max_episodes, eps):
@@ -21,15 +28,12 @@ class QLearning:
         self.decay = decay_factor * epsilon_min / (max_episodes * max_episode_steps)
         self.epsilon = eps
 
-        self.pos = np.linspace(env.observation_space.low[0], env.observation_space.high[0], num=bins, endpoint=True)
-        self.vel = np.linspace(env.observation_space.low[1], env.observation_space.high[1], num=bins, endpoint=True)
+        self.pos = linearize(env, 0, bins) # from -1.2 to 0.6 for bins
+        self.vel = linearize(env, 1, bins) # from -0.07 to 0.07 for bins
         self.action_state_vals = np.zeros((bins+1, bins+1, env.action_space.n))
 
-    def discretize(self, observation):
-        return np.digitize(observation[0], self.pos), np.digitize(observation[1], self.vel)
-
     def select(self, observation):
-        discretized_obs = self.discretize(observation)
+        discretized_obs = discretize(observation, self.pos, self.vel)
         if self.epsilon > epsilon_min:
             self.epsilon -= self.decay
         if np.random.random() > self.epsilon:
@@ -38,16 +42,40 @@ class QLearning:
             return np.random.choice(env.action_space.n)
 
     def learn(self, obs, action, reward, next_obs):
-        discretized_obs = self.discretize(obs)
-        discretized_next_obs = self.discretize(obs)
+        discretized_obs = discretize(obs, self.pos, self.vel)
+        discretized_next_obs = discretize(next_obs, self.pos, self.vel)
         action_values = reward + gamma * np.max(self.action_state_vals[discretized_next_obs]) - self.action_state_vals[discretized_obs][action]
         self.action_state_vals[discretized_obs][action] += alpha * action_values
 
 
 
 class SARSA:
-    def __init__(self, env, bins, max_episodes):
+    def __init__(self, env, bins, max_episodes, eps):
+        global alpha, gamma, epsilon, epsilon_min
         self.env = env
+        self.bins = bins
+        self.max_eps = max_episodes
+        self.decay = decay_factor * epsilon_min / (max_episodes * max_episode_steps)
+        self.epsilon = eps
+
+        self.pos = linearize(env, 0, bins) # from -1.2 to 0.6 for bins
+        self.vel = linearize(env, 1, bins) # from -0.07 to 0.07 for bins
+        self.action_state_vals = np.zeros((bins+1, bins+1, env.action_space.n))
+
+    def select(self, observation):
+        discretized_obs = discretize(observation, self.pos, self.vel)
+        if self.epsilon > epsilon_min:
+            self.epsilon -= self.decay
+        if np.random.random() > self.epsilon:
+            return np.argmax(self.action_state_vals[discretized_obs])
+        else:
+            return np.random.choice(env.action_space.n)
+
+    def learn(self, obs, action, reward, next_obs):
+        discretized_obs = discretize(obs, self.pos, self.vel)
+        discretized_next_obs = discretize(next_obs, self.pos, self.vel)
+        action_values = reward + gamma * np.max(self.action_state_vals[discretized_next_obs]) - self.action_state_vals[discretized_obs][action]
+        self.action_state_vals[discretized_obs][action] += alpha * action_values
 
 
 class Agent:
@@ -76,7 +104,7 @@ class Agent:
         total = 0.0
         obs = self.env.reset()
         while not finished:
-            action = policy[self.agent.discretize(obs)]
+            action = policy[discretize(obs, self.agent.pos, self.agent.vel)]
             next_obs, reward, done, info = self.env.step(action)
             obs = next_obs
             total += reward
@@ -91,7 +119,7 @@ if __name__ == "__main__":
     #env = gym.make('MountainCarMyEasyVersion-v0')
 
 
-    max_episodes = np.arange(50000, 100000, 10000, dtype=np.int32)
+    max_episodes = np.arange(10000, 100000, 10000, dtype=np.int32)
     bins = np.arange(10, 100, 5, dtype=np.int32)
 
 
@@ -101,7 +129,7 @@ if __name__ == "__main__":
 
     #output_dir = './q_output'
     #env = gym.wrappers.Monitor(env, output_dir, force=True)
-    for _ in range(1000):
+    for _ in range(10):
         handler.test(policy)
 
 
