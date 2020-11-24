@@ -1,3 +1,10 @@
+"""
+Authors: Viktor Cef Inselberg (i6157970), Albert Negura (i6145864)
+Reinforcement learning using OpenAI Gym and the Mountaincar environment.
+Specifically, SARSA and Q-Learning are implemented.
+Visualization methods are also included.
+Please note the argparse if running from console (explanation included in README).
+"""
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,14 +22,36 @@ DEBUG = True
 CONSTANT = True
 
 def linearize(env, i, n_bins):
+    """
+    Generate a linear array between the lowest point in the observation space and highest point in the observation space of the environment.
+    :param env: the given environment
+    :param i: the observation number (0 position, 1 velocity)
+    :param n_bins: the number of values to generate
+    :return: a linearly spaced vector
+    """
     return np.linspace(env.observation_space.low[i], env.observation_space.high[i], num=n_bins, endpoint=True)
 
 
 def discretize(observation, pos, vel):
+    """
+    Discretize a given observation space according to the given linearly-spaced vectors.
+    :param observation: the observation space
+    :param pos: the position vector
+    :param vel: the velocity vector
+    :return: a discretized version of the space.
+    """
     return np.digitize(observation[0], pos), np.digitize(observation[1], vel)
 
 
 def heatmap(agent, episode, n_bins, reward):
+    """
+    Generate a heatmap of the velocity against position.
+    :param agent: the agent to obtain the action state values from (for the velocity and position values).
+    :param episode: which episode the heatmap is being generated for
+    :param n_bins: resolution of the heatmap (square)
+    :param reward: the best reward obtained so far
+    :return: nothing
+    """
     q_vals = agent.action_state_vals
     values = np.zeros((n_bins, n_bins))
     for i in range(n_bins):
@@ -37,6 +66,10 @@ def heatmap(agent, episode, n_bins, reward):
 
 
 def reward_plot():
+    """
+    Generate a linear plot of the reward over all episodes.
+    :return: nothing
+    """
     episodes = [i+1 for i in range(max_episodes[0])]
     plt.plot(episodes, rewards)
     plt.ylabel('Reward') # clamped between -1.2 and 0.6 by environment
@@ -47,6 +80,13 @@ def reward_plot():
 
 class QLearning:
     def __init__(self, env, bins, max_episodes, eps):
+        """
+        Initialize a Q-Learning agent
+        :param env: the environment the agent is being trained on
+        :param bins: the dimension of the discretized version of the space
+        :param max_episodes: maximum number of episodes the agent will be trained on
+        :param eps: initial value for epsilon for the epsilon greedy selection strategy
+        """
         global alpha, gamma, epsilon, epsilon_min
         self.env = env
         self.bins = bins
@@ -59,6 +99,11 @@ class QLearning:
         self.action_state_vals = np.zeros((bins + 1, bins + 1, env.action_space.n))
 
     def select(self, observation):
+        """
+        Select an value according to an epsilon greedy selection strategy.
+        :param observation: the current observation space
+        :return: the selected action according to epsilon greedy (either "best" action or random)
+        """
         discretized_obs = discretize(observation, self.pos, self.vel)
         if self.epsilon > epsilon_min:
             self.epsilon -= self.decay
@@ -68,6 +113,14 @@ class QLearning:
             return np.random.choice(env.action_space.n)
 
     def learn(self, obs, action, reward, next_obs):
+        """
+        Update the action state values of the agent for the given time step according to the agent's update method.
+        :param obs: the current observation
+        :param action: the current action
+        :param reward: the reward for the current action
+        :param next_obs: the next observation
+        :return: nothing
+        """
         discretized_obs = discretize(obs, self.pos, self.vel)
         discretized_next_obs = discretize(next_obs, self.pos, self.vel)
         action_values = reward + gamma * np.max(self.action_state_vals[discretized_next_obs]) - \
@@ -77,6 +130,13 @@ class QLearning:
 
 class SARSA:
     def __init__(self, env, bins, max_episodes, eps):
+        """
+        Initialize a SARSA agent
+        :param env: the environment the agent is being trained on
+        :param bins: the dimension of the discretized version of the space
+        :param max_episodes: maximum number of episodes the agent will be trained on
+        :param eps: initial value for epsilon for the epsilon greedy selection strategy
+        """
         global alpha, gamma, epsilon, epsilon_min
         self.env = env
         self.bins = bins
@@ -90,6 +150,11 @@ class SARSA:
         self.policy = np.random.randint(0, env.action_space.n, size=(bins + 1, bins + 1))
 
     def select(self, observation):
+        """
+        Select an value according to an epsilon greedy selection strategy.
+        :param observation: the current observation space
+        :return: the selected action according to epsilon greedy (either "best" action or random)
+        """
         discretized_obs = discretize(observation, self.pos, self.vel)
         if self.epsilon > epsilon_min:
             self.epsilon -= self.decay
@@ -99,6 +164,14 @@ class SARSA:
             return np.random.choice(env.action_space.n)
 
     def learn(self, obs, action, reward, next_obs):
+        """
+        Update the action state values of the agent for the given time step according to the agent's update method.
+        :param obs: the current observation
+        :param action: the current action
+        :param reward: the reward for the current action
+        :param next_obs: the next observation
+        :return: nothing
+        """
         discretized_obs = discretize(obs, self.pos, self.vel)
         discretized_next_obs = discretize(next_obs, self.pos, self.vel)
         next_action = self.policy[discretized_next_obs]
@@ -110,10 +183,19 @@ class SARSA:
 
 class Agent:
     def __init__(self, env, agent):
+        """
+        Initialize an agent handler to handle the training of the agent.
+        :param env: the environment to train the agent in.
+        :param agent: the agent to be trained.
+        """
         self.agent = agent
         self.env = env
 
     def train(self):
+        """
+        Train the agent and plot the results.
+        :return: the trained policy
+        """
         global rewards
         best_reward = -1000000000
         rewards = []
@@ -174,11 +256,11 @@ if __name__ == "__main__":
                         help='Number of time steps each episode.')
     parser.add_argument('--constant',
                         type=bool,
-                        default=True,
+                        default=False,
                         help='The constant printing variable (True/False)')
     parser.add_argument('--debug',
                         type=bool,
-                        default=False,
+                        default=True,
                         help='The Testing mode variable (True/False)')
     # Execute parse_args()
     args = parser.parse_args()
